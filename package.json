@@ -1,7 +1,7 @@
 {
   "name": "@dgck81lnn/koishi-plugin-adapter-minecraft-console-client",
   "description": "Minecraft-Console-Client adapter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -10,10 +10,15 @@
   ],
   "license": "MIT",
   "keywords": [
-    "chatbot",
-    "koishi",
-    "plugin"
+    "mcc",
+    "minecraft java",
+    "java edition"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DGCK81LNN/koishi-plugin-adapter-minecraft-console-client.git"
+  },
+  "homepage": "https://github.com/DGCK81LNN/koishi-plugin-adapter-minecraft-console-client",
   "peerDependencies": {
     "koishi": "4.18.0"
   }

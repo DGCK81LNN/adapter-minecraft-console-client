@@ -48,6 +48,8 @@ export interface MCCBot<C extends Context, T extends MCCBot.Config = MCCBot.Conf
 }
 
 export namespace MCCBot {
+  export const usage = `请安装并运行 [Minecraft-Console-Client](https://mccteam.github.io)，并在其配置文件中启用 \`ChatBot.WebSocketBot\`。`
+
   export interface Config extends Adapter.WsClientConfig {
     endpoint: string
     mccPassword: string
