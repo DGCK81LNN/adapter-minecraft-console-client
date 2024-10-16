@@ -1,3 +1,286 @@
+import { Context, Dict, uncapitalize } from "koishi"
+import { MCCBot } from "./bot"
+
+class _events {
+  OnWsRestarting: void
+  OnWsConnectionClose: void
+  OnGameJoined: void
+  OnBlockBreakAnimation: { entity: Entity; location: Location; stage: number }
+  OnEntityAnimation: { entity: Entity; animation: number }
+  OnChatPrivate: { sender: string; message: string; rawText: string }
+  OnChatPublic: { username: string; message: string; rawText: string }
+  OnTeleportRequest: { sender: string; rawText: string }
+  OnChatRaw: { text: string; json?: string }
+  OnDisconnect: { reason: string; message: string }
+  OnPlayerProperty: Dict<number>
+  OnServerTpsUpdate: { tps: number }
+  OnTimeUpdate: { worldAge: number; timeOfDay: number }
+  OnEntityMove: Entity
+  OnInternalCommand: { command: string; parameters: string; result: string }
+  OnEntitySpawn: Entity
+  OnEntityDespawn: Entity
+  OnHeldItemChange: { itemSlot: number }
+  OnHealthUpdate: { health: number; food: number }
+  OnExplosion: { location: Location; strength: number; recordCount: number }
+  OnSetExperience: { experienceBar: number; level: number; totalExperience: number }
+  OnGamemodeUpdate: { playerName: string; uuid: string; gameMode: GameMode }
+  OnLatencyUpdate: { playerName: string; uuid: string; latency: number }
+  OnMapData: {
+    mapId: number
+    scale: number
+    trackingPosition: boolean
+    locked: boolean
+    icons: MapIcon[]
+    columnsUpdated: number
+    rowsUpdated: number
+    mapColumnX: number
+    mapRowZ: number
+    colors: number[]
+  }
+  OnTradeList: { windowId: number; trades: any[]; villagerInfo: any }
+  OnTitle: {
+    action: number
+    titleText: string
+    subtitleText: string
+    actionBarText: string
+    fadeIn: number
+    stay: number
+    fadeout: number
+    rawJson: string
+  }
+  OnEntityEquipment: { entity: Entity; slot: number; item?: Item }
+  OnEntityEffect: {
+    entity: Entity
+    effect: string
+    amplifier: number
+    duration: number
+    flags: number
+  }
+  OnScoreboardObjective: {
+    objectiveName: string
+    mode: number
+    objectiveValue: string
+    type: number
+    rawJson: string
+    numberFormat: number
+  }
+  OnUpdateScore: {
+    entityName: string
+    action: number
+    objectiveName: string
+    objectiveDisplayName: string
+    type: number
+    numberFormat: number
+  }
+  OnInventoryUpdate: { inventoryId: number }
+  OnInventoryOpen: { inventoryId: number }
+  OnInventoryClose: { inventoryId: number }
+  OnPlayerJoin: { uuid: string; name: string }
+  OnPlayerLeave: { uuid: string; name: string }
+  OnDeath: void
+  OnRespawn: void
+  OnEntityHealth: { entity: Entity; health: number }
+  OnEntityMetadata: { entity: Entity; metadata: Entity["Metadata"] }
+  OnPlayerStatus: { statusId: number }
+  OnNetworkPacket: {
+    packetId: number
+    isLogin: boolean
+    isInbound: boolean
+    packetData: number[]
+  }
+  OnWsCommandResponse: {
+    success: boolean
+    requestId: string
+    command: string
+    result: any
+    message?: string
+    stackTrace?: string
+  }
+  OnMccCommandResponse: { response: string }
+}
+export type Events = { [K in keyof _events]: _events[K] }
+export const eventNames = Object.keys(new _events())
+
+export const convertedEvents = [
+  "OnChatPublic",
+  "OnChatPrivate",
+  "OnPlayerJoin",
+  "OnPlayerLeave",
+] as const
+export type ConvertedEvents = (typeof convertedEvents)[number]
+
+export const alwaysReceiveEvents = [...convertedEvents, "OnWsCommandResponse"] as const
+export type AlwaysReceiveEvents = (typeof alwaysReceiveEvents)[number]
+
+export interface Payload<T extends keyof Events = keyof Events> {
+  event: T
+  data: Events[T]
+}
+
+class _commands {
+  ChangeSessionId: (sessionId: string) => string
+  Authenticate: (password: string) => string
+  LogToConsole: (message: string) => string
+  LogDebugToConsole: (message: string) => string
+  LogToConsoleTranslated: (message: string) => string
+  LogDebugToConsoleTranslated: (message: string) => string
+  ReconnectToTheServer: (extraAttempts: number, delaySeconds: number) => true
+  DisconnectAndExit: () => true
+  SendPrivateMessage: (playerName: string, message: string) => true
+  RunScript: (filename: string) => true
+  GetTerrainEnabled: () => boolean
+  SetTerrainEnabled: (enabled: boolean) => true
+  GetEntityHandlingEnabled: () => boolean
+  Sneak: (on: boolean) => true
+  SendEntityAction: (actionType: EntityActionType) => true
+  DigBlock: (
+    x: number,
+    y: number,
+    z: number,
+    swingArms?: boolean,
+    lookAtBlock?: boolean
+  ) => boolean
+  SetSlot: (slotNumber: string) => true
+  GetWorld: () => { chunkCnt: boolean; chunkLoadNotCompleted: boolean }
+  GetEntities: () => Record<number, Entity>
+  GetPlayersLatency: () => Record<number, number>
+  GetCurrentLocation: () => Location
+  MoveToLocation: (
+    x: number,
+    y: number,
+    z: number,
+    allowUnsafe?: boolean,
+    allowDirectTeleport?: boolean,
+    maxOffset?: number,
+    minoffset?: number,
+    timeout?: number
+  ) => boolean
+  ClientIsMoving: () => boolean
+  LookAtLocation: (x: number, y: number, z: number) => true
+  GetTimestamp: () => number
+  GetServerPort: () => number
+  GetServerHost: () => string
+  GetUsername: () => string
+  GetGamemode: () => GameMode
+  GetYaw: () => number
+  GetPitch: () => number
+  GetUserUUID: () => string
+  GetOnlinePlayers: () => string[]
+  GetOnlinePlayersWithUUID: () => Dict<string>
+  GetServerTPS: () => number
+  InteractEntity: (
+    entityId: number,
+    interactionType: InteractType,
+    hand?: Hand
+  ) => boolean
+  CreativeGive: (slotId: number, itemType: ItemType, count: number, nbt?: any) => boolean
+  CreativeDelete: (slotId: number) => boolean
+  SendAnimation: (hand?: Hand) => boolean
+  SendPlaceBlock: (
+    x: number,
+    y: number,
+    z: number,
+    direction: Direction,
+    hand?: Hand
+  ) => boolean
+  UseItemInHand: () => boolean
+  GetInventoryEnabled: () => boolean
+  GetPlayerInventory: () => Inventory
+  GetInventories: () => Record<number, Inventory>
+  WindowAction: (
+    windowId: number,
+    slotId: number,
+    windowActionType: WindowActionType
+  ) => boolean
+  ChangeSlot: (slotNumber: string) => true
+  GetCurrentSlot: () => number
+  ClearInventories: () => boolean
+  UpdateSign: (
+    x: number,
+    y: number,
+    z: number,
+    line1: string,
+    line2: string,
+    line3: string,
+    line4: string
+  ) => boolean
+  SelectTrade: (selectedSlot: number) => boolean
+  UpdateCommandBlock: (
+    x: number,
+    y: number,
+    z: number,
+    command: string,
+    mode: CommandBlockMode,
+    flags: CommandBlockFlags
+  ) => boolean
+  CloseInventory: (inventoryId: number) => boolean
+  GetMaxChatMessageLength: () => number
+  Respawn: () => boolean
+  GetProtocolVersion: () => number
+}
+export type Commands = { [K in keyof _commands]: _commands[K] }
+export const commandNames = Object.keys(new _commands())
+
+type _internal = {
+  [K in keyof Commands as Uncapitalize<K>]: (
+    ...args: Parameters<Commands[K]>
+  ) => Promise<ReturnType<Commands[K]>>
+}
+export class Internal {
+  constructor(public readonly bot: MCCBot<Context>) {}
+
+  _send: (data: string) => void = null
+  _wsCommand: (
+    command: string,
+    ...parameters: unknown[]
+  ) => Promise<Events["OnWsCommandResponse"]> = null
+
+  protected static define(command: string) {
+    this.prototype[uncapitalize(command)] = async function (
+      this: Internal,
+      ...parameters: any[]
+    ) {
+      const response = await this._wsCommand(command, ...parameters)
+      if (!response.success) throw new SenderError(command, parameters, response)
+      return response.result
+    }
+  }
+  static {
+    for (const name of commandNames) Internal.define(name)
+  }
+}
+export interface Internal extends _internal {}
+
+function formatCommand(command: string, parameters: unknown[]) {
+  if (!parameters.length || command === "Authenticate") return command
+  return `${command}(${parameters.map(x => JSON.stringify(x)).join(",")})`
+}
+function defineUnenumerableProperties(thing: object, props: Dict<unknown>) {
+  for (const [key, value] of Object.entries(props))
+    Object.defineProperty(thing, key, { value, configurable: true, writable: true })
+}
+
+export class TimeoutError extends Error {
+  constructor(command: string, parameters: unknown[]) {
+    super(`${formatCommand(command, parameters)} timeout`)
+    defineUnenumerableProperties(this, { parameters, command })
+  }
+}
+
+export class SenderError extends Error {
+  constructor(
+    command: string,
+    parameters: unknown[],
+    response: Events["OnWsCommandResponse"]
+  ) {
+    const message = response.result
+    super(`${formatCommand(command, parameters)} failed: ${message}`)
+    defineUnenumerableProperties(this, { parameters, command, response })
+  }
+}
+
+// Below come all the enums and interfaces 💩
+
 export enum CommandBlockFlags {
   TrackOutput = 0x01,
   IsConditional = 0x02,
@@ -164,13 +447,13 @@ export enum EntityPose {
   Dying = 6,
 }
 
-export type Entity = {
+export interface Entity {
   ID: number
   UUID: string
   Name?: string
-  CustomNameJson: string
+  CustomNameJson?: string
   IsCustomNameVisible: boolean
-  CustomName: string
+  CustomName?: string
   Latency: number
   Type: EntityType
   Location: Location
@@ -181,7 +464,7 @@ export type Entity = {
   Item: Item
   Pose: EntityPose
   Metadata: any
-  Equipment: any
+  Equipment: Record<number, Item>
 }
 
 export enum EntityActionType {
@@ -1527,18 +1810,20 @@ export enum ItemType {
 }
 
 export interface Item {
-  ItemType: ItemType
+  Type: ItemType
   Count: number
+  Data: number
   NBT?: any
+  IsEmpty: boolean
+  DisplayName?: any
+  Lores?: any
+  Damage: number
 }
 
-export interface LocationSpec {
+export interface Location {
   X: number
   Y: number
   Z: number
-}
-
-export interface Location extends LocationSpec {
   Status: number
   ChunkX: number
   ChunkY: number
@@ -1645,100 +1930,13 @@ export enum WindowActionType {
   EndDragMiddle,
 }
 
-export interface Events {
-  OnWsRestarting: void
-  OnWsConnectionClose: void
-  OnGameJoined: void
-  OnBlockBreakAnimation: { entity: Entity; location: Location; stage: number }
-  OnEntityAnimation: { entity: Entity; animation: number }
-  OnChatPrivate: { sender: string; message: string; rawText: string }
-  OnChatPublic: { sender: string; message: string; rawText: string }
-  OnTeleportRequest: { sender: string; rawText: string }
-  OnChatRaw: { text: string; json?: string }
-  OnDisconnected: { reason: string; message: string }
-  OnPlayerProperty: any
-  OnServerTpsUpdate: { tps: number }
-  OnTimeUpdate: { worldAge: number; timeOfDay: number }
-  OnEntityMove: Entity
-  OnInternalCommand: { command: string; parameters: string; result: string }
-  OnEntitySpawn: Entity
-  OnEntityDespawn: Entity
-  OnHeldItemChange: { itemSlot: number }
-  OnHealthUpdate: { health: number; food: number }
-  OnExplosion: { location: Location; strength: number; recordCount: number }
-  OnSetExperience: { experienceBar: number; level: number; totalExperience: number }
-  OnGamemodeUpdate: { playerName: string; uuid: string; gameMode: string }
-  OnLatencyUpdate: { playerName: string; uuid: string; latency: number }
-  OnMapData: {
-    mapId: number
-    scale: number
-    trackingPosition: boolean
-    locked: boolean
-    icons: MapIcon[]
-    columnsUpdated: number
-    rowsUpdated: number
-    mapColumnX: number
-    mapRowZ: number
-    colors: number[]
-  }
-  OnTradeList: { windowId: number; trades: any[]; villagerInfo: any }
-  OnTitle: {
-    action: number
-    titleText: string
-    subtitleText: string
-    actionBarText: string
-    fadeIn: number
-    stay: number
-    fadeout: number
-    rawJson: string
-  }
-  OnEntityEquipment: { entity: Entity; slot: number; item?: Item }
-  OnEntityEffect: {
-    entity: Entity
-    effect: string
-    amplifier: number
-    duration: number
-    flags: number
-  }
-  OnScoreboardObjective: {
-    objectiveName: string
-    mode: number
-    objectiveValue: string
-    type: number
-    rawJson: string
-    numberFormat: number
-  }
-  OnUpdateScore: {
-    entityName: string
-    action: number
-    objectiveName: string
-    objectiveDisplayName: string
-    type: number
-    numberFormat: number
-  }
-  OnInventoryUpdate: { inventoryId: number }
-  OnInventoryOpen: { inventoryId: number }
-  OnInventoryClose: { inventoryId: number }
-  OnPlayerJoin: { uuid: string; name: string }
-  OnPlayerLeave: { uuid: string; name: string }
-  OnDeath: void
-  OnRespawn: void
-  OnEntityHealth: { entity: Entity; health: number }
-  OnEntityMetadata: { entity: Entity; metadata: any }
-  OnPlayerStatus: { statusId: number }
-  OnNetworkPacket: {
-    packetId: number
-    isLogin: boolean
-    isInbound: boolean
-    packetData: number[]
-  }
-  OnWsCommandResponse: {
-    success: boolean
-    requestId: string
-    command: string
-    result: any
-    message?: string
-    stackTrace?: string
-  }
-  OnMccCommandResponse: { response: string }
+export type GameMode = "unknown" | "survival" | "creative" | "adventure" | "spectator"
+
+export interface Inventory {
+  ID: number
+  Type: number
+  Title: string
+  StateID: number
+  Items: Record<number, Item>
+  Properties: any
 }
