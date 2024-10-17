@@ -4,6 +4,7 @@ import * as MCC from "./types"
 
 export * from "./adapter"
 export * from "./bot"
+export { MCC }
 export default MCCBot
 
 declare module "@satorijs/core" {
