@@ -9,6 +9,7 @@ import {
   Schema,
   Time,
   uncapitalize,
+  Universal,
 } from "koishi"
 import { MCCAdapter } from "./adapter"
 import * as MCC from "./types"
@@ -41,6 +42,49 @@ export class MCCBot<
     if (!text.trim()) return []
     this.internal.sendPrivateMessage(userId, text)
     return []
+  }
+
+  async getChannel(): Promise<Universal.Channel> {
+    return {
+      id: this.config.channelId,
+      type: Universal.Channel.Type.TEXT,
+      name: `${await this.internal.getServerHost()}:${await this.internal.getServerPort()}`,
+    }
+  }
+
+  async getChannelList(): Promise<Universal.List<Universal.Channel>> {
+    return {
+      data: [await this.getChannel()],
+    }
+  }
+
+  async getGuildList(): Promise<Universal.List<Universal.Guild>> {
+    return {
+      data: [await this.getChannel()],
+    }
+  }
+
+  async getUser(userId: string): Promise<Universal.User> {
+    return {
+      id: userId,
+      username: userId,
+    }
+  }
+
+  async getGuildMember(guildId: string, userId: string): Promise<Universal.GuildMember> {
+    return {
+      user: await this.getUser(userId),
+    }
+  }
+
+  async getGuildMemberList(
+    guildId: string
+  ): Promise<Universal.List<Universal.GuildMember>> {
+    return {
+      data: await Promise.all(
+        (await this.internal.getOnlinePlayers()).map(u => this.getGuildMember(guildId, u))
+      ),
+    }
   }
 }
 export interface MCCBot<C extends Context, T extends MCCBot.Config = MCCBot.Config> {
