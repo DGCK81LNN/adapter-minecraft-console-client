@@ -99,7 +99,7 @@ export class MCCAdapter<C extends Context> extends Adapter.WsClient<C, MCCBot<C>
       if (session.userId) session.event.user.name = session.userId
       if (
         this.bot.config.eventTypes.includes(
-          MCC.eventNames.includes(payload.event) ? payload.event : "_default"
+          MCC.eventNames.includes(payload.event) ? hyphenatedEventName : "_default"
         )
       )
         this.bot.logger.debug(session)
