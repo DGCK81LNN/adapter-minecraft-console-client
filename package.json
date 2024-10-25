@@ -1,7 +1,7 @@
 {
   "name": "@dgck81lnn/koishi-plugin-adapter-minecraft-console-client",
   "description": "Minecraft-Console-Client adapter",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [

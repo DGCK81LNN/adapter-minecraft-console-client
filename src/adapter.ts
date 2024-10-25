@@ -46,7 +46,7 @@ export class MCCAdapter<C extends Context> extends Adapter.WsClient<C, MCCBot<C>
       if (
         !([...MCC.alwaysReceiveEvents] as string[]).includes(payload.event) &&
         !this.bot.config.eventTypes.includes(
-          MCC.eventNames.includes(hyphenatedEventName) ? hyphenatedEventName : "_default"
+          MCC.eventNames.includes(payload.event) ? hyphenatedEventName : "_default"
         )
       )
         return
