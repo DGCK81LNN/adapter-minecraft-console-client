@@ -3,8 +3,6 @@ import {
   Bot,
   Context,
   difference,
-  Fragment,
-  h,
   hyphenate,
   Schema,
   Time,
@@ -12,12 +10,15 @@ import {
   Universal,
 } from "koishi"
 import { MCCAdapter } from "./adapter"
+import { MCCMessageEncoder } from "./message"
 import * as MCC from "./types"
 
 export class MCCBot<
   C extends Context,
   T extends MCCBot.Config = MCCBot.Config
 > extends Bot<C, T> {
+  static MessageEncoder = MCCMessageEncoder
+
   constructor(ctx: C, config: T) {
     super(ctx, config)
     this.internal = new MCC.Internal(this)
@@ -30,27 +31,19 @@ export class MCCBot<
     await this.getLogin()
   }
 
-  async sendMessage(channelId: string, content: Fragment): Promise<string[]> {
-    if (channelId.startsWith("private:"))
-      return this.sendPrivateMessage(channelId.slice(8), content)
-    const text = h("", h.normalize(content)).toString(true)
-    if (!text.trim()) return []
-    this.internal._send("/send " + text)
-    return []
-  }
-
-  async sendPrivateMessage(userId: string, content: Fragment): Promise<string[]> {
-    const text = h("", h.normalize(content)).toString(true)
-    if (!text.trim()) return []
-    this.internal.sendPrivateMessage(userId, text)
-    return []
-  }
-
   async getChannel(): Promise<Universal.Channel> {
     return {
       id: this.config.channelId,
       type: Universal.Channel.Type.TEXT,
       name: `${await this.internal.getServerHost()}:${await this.internal.getServerPort()}`,
+    }
+  }
+
+  async createDirectChannel(userId: string): Promise<Universal.Channel> {
+    // return direct channel stub in order to use satori's default logic for sending
+    return {
+      id: `private:${userId}`,
+      type: Universal.Channel.Type.DIRECT,
     }
   }
 
