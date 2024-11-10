@@ -74,12 +74,10 @@ export class MCCAdapter<C extends Context> extends Adapter.WsClient<C, MCCBot<C>
       session.setInternal("mcc", payload)
 
       if (is(payload, "OnChatPublic")) {
-        if (payload.data.username === this.bot.user.id) return
         session.type = "message"
         session.userId = payload.data.username
         session.elements = [h.text(payload.data.message)]
       } else if (is(payload, "OnChatPrivate")) {
-        if (payload.data.sender === this.bot.user.id) return
         session.type = "message"
         session.isDirect = true
         session.userId = payload.data.sender
