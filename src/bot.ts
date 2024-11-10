@@ -31,6 +31,8 @@ export class MCCBot<
   }
 
   async sendMessage(channelId: string, content: Fragment): Promise<string[]> {
+    if (channelId.startsWith("private:"))
+      return this.sendPrivateMessage(channelId.slice(8), content)
     const text = h("", h.normalize(content)).toString(true)
     if (!text.trim()) return []
     this.internal._send("/send " + text)

@@ -82,7 +82,8 @@ export class MCCAdapter<C extends Context> extends Adapter.WsClient<C, MCCBot<C>
         if (payload.data.sender === this.bot.user.id) return
         session.type = "message"
         session.isDirect = true
-        session.channelId = session.userId = payload.data.sender
+        session.userId = payload.data.sender
+        session.channelId = `private:${payload.data.sender}`
         session.elements = [h.text(payload.data.message)]
       } else if (is(payload, "OnTeleportRequest")) {
         session.userId = payload.data.sender
